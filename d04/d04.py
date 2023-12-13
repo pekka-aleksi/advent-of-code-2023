@@ -25,35 +25,55 @@ def part1(data):
 
     return S
 
-def part2(data):
+def part2(data, DEBUG=False):
 
-    S = 0
 
-    counts = {i: 1 for i, _ in enumerate(data, 1)}
+    card_counts = {i: 1 for i, _ in enumerate(data, 1)}
 
-    for card_id, ((card_numbers, card_winners), count) in enumerate(zip(data, counts), 1):
+    for card_id, (card_numbers, card_winners) in enumerate(data, 1):
 
-        print(*counts.items(), sep='\n')
+        if DEBUG:
+            print(*card_counts.items(), sep='\n')
+
+        count = card_counts[card_id]
+
+
+        assert len(set(card_numbers)) == len(card_numbers)
+        assert len(set(card_winners)) == len(card_winners)
+
         numbers = collections.Counter(card_numbers)
         winners = collections.Counter(card_winners)
 
-        both = numbers & winners
+        this_card_wins = numbers & winners
 
-        if both:
-            more = len(both)
+        if DEBUG:
+            print(card_id, this_card_wins)
 
-            S += count*more
-            print(f"Card {card_id} won {more} x{count} times")
+        if this_card_wins:
+            if DEBUG:
+                print(f"Card {card_id} wins {count} times.")
 
-            for i in range(card_id+1, min(card_id+1+more, len(data))):
-                print(f"Adding to {i}: {counts[i]}")
-                counts[i] += 1*count
+            how_many_more_cards = len(this_card_wins)
 
-        print("-"*80)
-    return S
+            for C in range(count):
+                for i in range(card_id+1, min(card_id+1+how_many_more_cards, len(data))):
+                    if DEBUG:
+                        print(f"\tAdding 1 to {card_id+1}")
+                    TO_ADD = 1
+                    card_counts[i] += TO_ADD
+        else:
+            if DEBUG:
+                print(f"Card {card_id} did NOT win se we're not doing anything")
+            else:
+                pass
+
+
+    print(card_counts)
+        #print("-"*80)
+    return sum(card_counts.values())
 
 
 
-data = get_data('example.txt')
+data = get_data('input.txt')
 #print(part1(data=data))
 print(part2(data=data))
