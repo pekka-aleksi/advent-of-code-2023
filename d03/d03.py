@@ -4,6 +4,7 @@ import re
 
 import math
 
+
 def get_data(filename='input.txt'):
     with open(filename, 'rt', encoding='ascii') as file:
         lines = file.read().splitlines()
@@ -11,23 +12,6 @@ def get_data(filename='input.txt'):
         lines = [line for line in lines]
 
     return lines
-
-
-def continue_left(ny, nx, dataset):
-    LEFT = nx - 1
-
-    if num := dataset[ny][LEFT] > 0 and LEFT > 0:
-        return num
-    return False
-
-
-def continue_right(ny, nx, dataset):
-    MAX_X = len(dataset[0]) - 1
-    RIGHT = nx + 1
-
-    if num := dataset[ny][RIGHT] > 0 and RIGHT < MAX_X:
-        return num
-    return False
 
 
 def part1(data):
@@ -40,8 +24,7 @@ def part1(data):
     for y, row in enumerate(data):
         for x, col in enumerate(row):
             if col in checks:
-                coords_to_check.append((y,x))
-
+                coords_to_check.append((y, x))
 
     numbers_found = {}
     MAX_X = len(data[0]) - 1
@@ -81,153 +64,62 @@ def part1(data):
                 if min(iter.span()) <= coordinate <= max(iter.span()) and number in string.digits:
                     true_numbers[(y, iter.span())] = int(iter.groups()[0])
 
-
     return sum(true_numbers.values())
 
 
-
-
-RECURSION_RETURN = []
-
-def return_flow(dataset, ny, nx):
-
-    MAX_X = len(dataset[0]) - 1
-    MAX_Y = len(dataset) - 1
-
-    # we only move nx + 1 and nx - 1
-    if ny < 0 or ny > MAX_Y or nx < 0 or nx > MAX_X or dataset[ny][nx] not in string.digits:
-        return RECURSION_RETURN
-
-    if dataset[ny][nx] in string.digits:
-        VAL = return_flow(dataset, ny, nx - 1)
-        return [(ny, nx, dataset[ny][nx])] + (VAL if VAL else [])
-
-def return_flow_right(dataset, ny, nx):
-
-    MAX_X = len(dataset[0]) - 1
-    MAX_Y = len(dataset) - 1
-
-    # we only move nx + 1 and nx - 1
-    if ny < 0 or ny > MAX_Y or nx < 0 or nx > MAX_X or dataset[ny][nx] not in string.digits:
-        return RECURSION_RETURN
-
-    if dataset[ny][nx] in string.digits:
-        VAL = return_flow_right(dataset, ny, nx + 1)
-        return [(ny, nx, dataset[ny][nx])] + (VAL if VAL else [])
+def my_span(test_list, all_operators, operator_y, operator_x):
+    for (span_low, span_high), number in test_list:
+        match operator_x, span_low, span_high:
+            case centerpoint, start, end if start <= centerpoint <= end or centerpoint+1 == start or centerpoint == end:
+                print(f"We found {number} ({operator_y}, {operator_x})")
+                all_operators[(operator_y, operator_x)].add(number)
+            case _:
+                print(operator_x, number, span_low, span_high)
 
 
 def part2(data):
-    coords_to_check = list()
+    RE_number = re.compile(r'(?P<number>\d+)')
+    RE_oper = re.compile(r'(?P<operator>\*)')
 
-    checks = '*'
+    all_operators = collections.defaultdict(set)
+    for y, (row1, row2, row3) in enumerate(zip(data, data[1:], data[2:])):
 
-    for operator_y, neighbor_row in enumerate(data):
-        for operator_x, col in enumerate(neighbor_row):
-            if col in checks:
-                coords_to_check.append((operator_y,operator_x))
+        numero1 = re.finditer(RE_number, row1)
+        numero2 = re.finditer(RE_number, row2)
+        numero3 = re.finditer(RE_number, row3)
 
-    EVERYTHING = {}
+        oper1 = re.finditer(RE_oper, row1)
+        oper2 = re.finditer(RE_oper, row2)
+        oper3 = re.finditer(RE_oper, row3)
 
-    for operator_y, operator_x in coords_to_check:
+        n1 = [(x.span(), x.group('number')) for x in numero1]
+        n2 = [(x.span(), x.group('number')) for x in numero2]
+        n3 = [(x.span(), x.group('number')) for x in numero3]
 
-        A = return_flow(data, operator_y-1, operator_x-1)
-        B = return_flow(data, operator_y-1, operator_x)
-        C = return_flow(data, operator_y-1, operator_x+1)
+        for oper_x in [min(x.span()) for x in oper1]:
+            my_span(n1, all_operators, operator_y=y, operator_x=oper_x)
+            my_span(n2, all_operators, operator_y=y, operator_x=oper_x)
 
-        D = return_flow(data, operator_y, operator_x-1)
-        E = return_flow(data, operator_y, operator_x+1)
+        for oper_x in [min(x.span()) for x in oper2]:
+            my_span(n1, all_operators, operator_y=y+1, operator_x=oper_x)
+            my_span(n2, all_operators, operator_y=y+1, operator_x=oper_x)
+            my_span(n3, all_operators, operator_y=y+1, operator_x=oper_x)
 
-        F = return_flow(data, operator_y+1, operator_x-1)
-        G = return_flow(data, operator_y+1, operator_x)
-        H = return_flow(data, operator_y+1, operator_x+1)
+        for oper_x in [min(x.span()) for x in oper3]:
+            my_span(n2, all_operators, operator_y=y+2, operator_x=oper_x)
+            my_span(n3, all_operators, operator_y=y+2, operator_x=oper_x)
 
-        EVERYTHING[(operator_y, operator_x)] = [x for x in [A, B, C, D, E, F, G, H] if x]
+    juttu = {k: v for k, v in all_operators.items() if len(v) > 1}
 
-        A = return_flow_right(data, operator_y-1, operator_x-1)
-        B = return_flow_right(data, operator_y-1, operator_x)
-        C = return_flow_right(data, operator_y-1, operator_x+1)
+    vektorit = map(list, list(juttu.values()))
 
-        D = return_flow_right(data, operator_y, operator_x-1)
-        E = return_flow_right(data, operator_y, operator_x+1)
+    summa = 0
+    for vektori in vektorit:
+        result = math.prod(list(map(int, vektori)))
+        summa += result
 
-        F = return_flow_right(data, operator_y+1, operator_x-1)
-        G = return_flow_right(data, operator_y+1, operator_x)
-        H = return_flow_right(data, operator_y+1, operator_x+1)
-
-        EVERYTHING[(operator_y, operator_x)].extend([x for x in [A, B, C, D, E, F, G, H] if x])
-
-
-    all_neighbors_per_mult = {}
-
-    for candidate, candidates in EVERYTHING.items():
-        all_neighbors_per_mult[candidate] = collections.defaultdict(set)
-        for candidatelist in candidates:
-            for y, x, number in candidatelist:
-                all_neighbors_per_mult[candidate][y].add((x, number))
-
-    built_up_numbers = list()
-
-    for (multiplier_y, multiplier_x), neighbor_value_and_x in all_neighbors_per_mult.items():
-
-        for neighbor_row, neighbor_row_full_data in neighbor_value_and_x.items():
-
-            if multiplier_y == neighbor_row and len(neighbor_row_full_data) > 1:
-
-                left_cands = [entry for entry in neighbor_row_full_data if entry[0] - multiplier_x < 0]
-                right_cands = [entry for entry in neighbor_row_full_data if multiplier_x - entry[0] < 0]
-
-                LEFTS, RIGHTS = 0, 0
-                match len(left_cands), len(right_cands):
-                    case 0, 0:
-                        continue
-
-                    case left_cands_len, right_cands_len:
-
-                        L, R = list(zip(*sorted(left_cands))), list(zip(*sorted(right_cands)))
-                        print(multiplier_y, multiplier_x, neighbor_value_and_x, L, R)
-
-                        match len(L), len(R):
-                            case l, 0:
-
-                                LEFTS = int("".join(L[1]))
-                                assert LEFTS != 0
-                                built_up_numbers.append(LEFTS)
-
-                            case 0, r:
-                                RIGHTS = int("".join(R[1]))
-                                assert RIGHTS != 0, f"RIGHTS {r}, {LEFTS}, {RIGHTS}, {neighbor_value_and_x.items()}"
-                                built_up_numbers.append(RIGHTS)
+    return summa
 
 
-                            case l, r:
-
-                                LEFTS = int("".join(L[1]))
-                                RIGHTS = int("".join(R[1]))
-                                assert RIGHTS != 0, f"LEFTS RIGHTS {l}, {r}, {LEFTS}, {RIGHTS}, {neighbor_value_and_x.items()}"
-                                built_up_numbers.append(LEFTS)
-                                built_up_numbers.append(RIGHTS)
-
-
-                            case _:
-                                print("WHAT")
-
-            else:
-
-                cands = int("".join(list(zip(*sorted(neighbor_row_full_data)))[1]))
-                assert cands != 0
-                built_up_numbers.append(cands)
-
-    assert len(built_up_numbers) % 2 == 0, built_up_numbers
-
-    print("Nämä rakennettiin", built_up_numbers)
-    #print(*all_neighbors_per_mult.items(), sep='\n')
-
-    R = [built_up_numbers[2*i:2*(i+1)] for i, X in enumerate(built_up_numbers) if X]
-    V = [x for x in map(math.prod, R) if x > 1]
-
-    print(R, V)
-    return sum(V)
-
-
-data = get_data('test.txt')
+data = get_data('input.txt')
 print(part2(data=data))
