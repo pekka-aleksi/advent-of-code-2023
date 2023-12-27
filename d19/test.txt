@@ -1,0 +1,7 @@
+in{x>1:accept,x<0:reject,R}
+accept{x>1:A,default}
+reject{x<1:R,default}
+default{s>0:R,R}
+
+{x=5,m=0,a=0,s=0}
+{x=0,m=0,a=0,s=0}

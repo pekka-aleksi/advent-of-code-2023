@@ -39,7 +39,7 @@ def part2(data, DEBUG=False):
 
 
         assert len(set(card_numbers)) == len(card_numbers)
-        assert len(set(card_winners)) == len(card_winners)
+        assert len(set(card_winners)) == len(card_winners), f"{card_winners = }"
 
         numbers = collections.Counter(card_numbers)
         winners = collections.Counter(card_winners)
@@ -47,7 +47,7 @@ def part2(data, DEBUG=False):
         this_card_wins = numbers & winners
 
         if DEBUG:
-            print(card_id, this_card_wins)
+            print(f"{card_id = }, {this_card_wins = }")
 
         if this_card_wins:
             if DEBUG:
@@ -56,8 +56,16 @@ def part2(data, DEBUG=False):
             how_many_more_cards = len(this_card_wins)
 
             for C in range(count):
-                for i in range(card_id+1, min(card_id+1+how_many_more_cards, len(data))):
+
+
+                R = min(card_id+1+how_many_more_cards, len(data)+1)
+                if DEBUG:
+                    print(f"{C = } {R = }")
+
+                for i in range(card_id+1, R):
+
                     if DEBUG:
+                        print(f"{i = }")
                         print(f"\tAdding 1 to {card_id+1}")
                     TO_ADD = 1
                     card_counts[i] += TO_ADD
@@ -76,4 +84,4 @@ def part2(data, DEBUG=False):
 
 data = get_data('input.txt')
 #print(part1(data=data))
-print(part2(data=data))
+print(part2(data=data, DEBUG=False))
