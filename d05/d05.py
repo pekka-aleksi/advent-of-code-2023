@@ -52,7 +52,7 @@ def part2(data):
 
     starts, ranges = seeds[::2], seeds[1::2]
 
-    seedpaths = {(start, start+range): [(start, start + range)] + [(None, None)] * len(mapping_types) for start, range in
+    seedpaths = {(start, start+range): [[(start, start + range)]] + [[(None, None)]] * len(mapping_types) for start, range in
                  zip(starts, ranges)}
 
     # print(mapping_types)
@@ -61,59 +61,62 @@ def part2(data):
         for CURRENT_MAPPING, mappings in enumerate(mapping_types, 1):
             PREVIOUS_MAPPING = CURRENT_MAPPING - 1
 
-            # koko seedpath liikahtaa
 
-            # datarakenteen tarvitsee huomioida tämä --
-            # tarvitsee tietää koko seed history koska halutaan tietää mihin seedit päätyvät
-            # vastaus saattaa olla MIKÄ tahansa seed
+            for remapping_dest_start, remapping_src_start, mapping_length in mappings:
 
-            # toisin sanottuna tarvitsee katsoa kun tullaan tänne - montako varianttia löytyy
-            # polut voivat kytkeytyä toisiinsa - tämä ei haittaa, kunhan tiedetään historiat.
-            # historiat ovat täysin toisistaan vieraita vaikka ne päätyisivät samaan paikkaan.
-
-
-
-            for dest_start, src_start, mapping_length in mappings:
-
-                src_end = src_start + mapping_length
+                remapping_src_end = remapping_src_start + mapping_length
 
                 seedhistory = seedpaths[(index_seed_start, index_seed_start+index_seed_range)]
 
-                current_seed_start, current_seed_end = seedhistory[PREVIOUS_MAPPING]
+                seedpaff = seedhistory[PREVIOUS_MAPPING]
 
-                if src_start < current_seed_end:
-                    print("--|-------|-A")
-                    print(src_start, current_seed_end)
+                print(seedpaff)
+
+                for current_seed_start, current_seed_end in seedpaff:
+
+                    print(f"{remapping_src_start}-{remapping_src_end}, {current_seed_start}-{current_seed_end}")
                     print(*seedpaths.items(), sep='\n')
-                    seedpaths[(index_seed_start, index_seed_start+index_seed_range)][CURRENT_MAPPING] = seedpaths[(index_seed_start, index_seed_start+index_seed_range)][PREVIOUS_MAPPING]
 
-
-                elif src_start <= current_seed_start <= src_end:
-                    if src_start <= current_seed_end <= src_end:
-                        print("--|----A--|--")
-
-
-
-
-
-
-                    elif current_seed_end <= src_end:
-                        print("--|----AAA|AA")
-
-                        # katkaistaan seedpath ja luodaan toinen (jolla oma range)
-
-                    else:
-                        assert False
-                elif current_seed_start < src_start:
-                    if src_start >= current_seed_end:
-                        print("AA|AA-----|--")
-
-                        # katkaistaan seedpath ja luodaan toinen (jolla oma range)
-
-                    else:  # voiko tulla 1-off?
-                        print("A-|-------|--")
+                    if remapping_src_end < current_seed_start:
+                        print("--|--REMAP--|--SEEDS")
                         seedpaths[(index_seed_start, index_seed_start+index_seed_range)][CURRENT_MAPPING] = seedpaths[(index_seed_start, index_seed_start+index_seed_range)][PREVIOUS_MAPPING]
 
+                    elif remapping_src_start <= current_seed_end <= remapping_src_end and current_seed_start <= remapping_src_start:
+                        print("-MORE-SEEDS--|--REMAP-AND-SEEDS--|------")
+                        new_left_start, new_left_end = remapping_src_start, current_seed_start
+                        new_center_start, new_center_end = new_left_end, new_left_end + (current_seed_end - current_seed_start)
+                        new_right_start, new_right_end = new_center_end, new_center_end + (remapping_src_end - current_seed_end)
+
+                        print(new_left_start, new_left_end, new_center_start, new_center_end, new_right_start, new_right_end)
+
+                        seedpaths[(index_seed_start, index_seed_start + index_seed_range)][CURRENT_MAPPING] = [(new_left_start, new_left_end), (new_center_start, new_center_end), (new_right_start, new_right_end)]
+
+
+                    elif remapping_src_start <= current_seed_start <= remapping_src_end and  remapping_src_end <= current_seed_end:
+                        print("--|--REMAP-AND-SEEDS--|-MORE-SEEDS--")
+                        new_left_start, new_left_end = remapping_src_start, current_seed_start
+                        new_center_start, new_center_end = new_left_end, new_left_end + (current_seed_end - current_seed_start)
+                        new_right_start, new_right_end = new_center_end, new_center_end + (remapping_src_end - current_seed_end)
+
+                        print(new_left_start, new_left_end, new_center_start, new_center_end, new_right_start, new_right_end)
+
+                        seedpaths[(index_seed_start, index_seed_start + index_seed_range)][CURRENT_MAPPING] = [(new_left_start, new_left_end), (new_center_start, new_center_end), (new_right_start, new_right_end)]
+
+
+                    elif remapping_src_start <= current_seed_start <= remapping_src_end and remapping_src_start <= current_seed_end <= remapping_src_end:
+                        print("--|-REMAP-AND-SEEDS-|--")
+                        new_left_start, new_left_end = remapping_src_start, current_seed_start
+                        new_center_start, new_center_end = new_left_end, new_left_end + (current_seed_end - current_seed_start)
+                        new_right_start, new_right_end = new_center_end, new_center_end + (remapping_src_end - current_seed_end)
+
+                        print(new_left_start, new_left_end, new_center_start, new_center_end, new_right_start, new_right_end)
+
+                        seedpaths[(index_seed_start, index_seed_start + index_seed_range)][CURRENT_MAPPING] = [(new_left_start, new_left_end), (new_center_start, new_center_end), (new_right_start, new_right_end)]
+
+                    elif remapping_src_start > current_seed_end:
+                        print("SEEDS--|--REMAP--|--")
+                    elif current_seed_start <= remapping_src_start and remapping_src_end <= current_seed_end:
+                        print("REMAP INSIDE SEEDS?")
 
     # print(seeds)
     vals = seedpaths.values()
