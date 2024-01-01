@@ -25,9 +25,7 @@ class Beam:
 
     def run(self, towards_y, towards_x, splitter_type):
 
-        beamset = set([self])
-
-
+        beamset = set()
 
         match self.direction:
             case 'left'|'right':
@@ -129,34 +127,37 @@ class Grid:
 
 
 
-    def run(self):
+    def run(self, beam):
 
-        for beam in self.beams:
+        new_beams = []
+        while True:
 
-            while True:
+            try:
+                (y, x), splitter_type = self.get(y=beam.y, x=beam.x, direction=beam.direction)
+            except StopIteration:
+                match beam.direction:
+                    case 'left':
+                        beamset = beam.run(towards_y=beam.y, towards_x=0, splitter_type='-')
+                    case 'right':
+                        beamset = beam.run(towards_y=beam.y, towards_x=self.W, splitter_type='-')
+                    case 'up':
+                        beamset = beam.run(towards_y=0, towards_x=beam.x, splitter_type='|')
+                    case 'down':
+                        beamset = beam.run(towards_y=self.H, towards_x=beam.x, splitter_type='|')
 
-                try:
-                    (y, x), splitter_type = self.get(y=beam.y, x=beam.x, direction=beam.direction)
-                except StopIteration:
-                    match beam.direction:
-                        case 'left':
-                            beam.run(towards_y=beam.y, towards_x=0, splitter_type='-')
-                        case 'right':
-                            beam.run(towards_y=beam.y, towards_x=self.W, splitter_type='-')
-                        case 'up':
-                            beam.run(towards_y=0, towards_x=beam.x, splitter_type='|')
-                        case 'down':
-                            beam.run(towards_y=self.H, towards_x=beam.x, splitter_type='|')
-                    #self.plot()
-                    #print("-" * 80)
-                    break
+                #new_beams.extend([x for x in beamset])
+                #self.plot()
+                #print("-" * 80)
+                break
 
-                print(beam.y, beam.x, beam.direction, splitter_type, '->', end=' ')
-                beamset = beam.run(towards_y=y, towards_x=x, splitter_type=splitter_type)
-                print(beam.y, beam.x, beam.direction)
-                self.plot()
-                print("-"*80)
+            print(beam.y, beam.x, beam.direction, splitter_type, '->', end=' ')
+            beamset = beam.run(towards_y=y, towards_x=x, splitter_type=splitter_type)
+            new_beams.extend([x for x in beamset])
 
+            print(beam.y, beam.x, beam.direction)
+            self.plot()
+            print("-"*80)
+        return new_beams
 
     def __str__(self):
         return "{beams:}:\n\t{splitters:}".format(beams=self.beams,
@@ -182,8 +183,22 @@ def part1(data):
     grid = Grid(splitters=data, MAX_Y=10, MAX_X=10)
     grid.plot()
 
-    grid.run()
-    grid.plot()
+    new_beams = grid.beams
+
+    while new_beams:
+
+        beams = []
+        for beam in new_beams:
+            nbeams = grid.run(beam)
+            beams.extend(nbeams)
+            print(f"{nbeams = }")
+        #grid.beams.extend([x for x in new_beams])
+
+        if not beams:
+            break
+
+
+        grid.plot()
 
 data = get_data('example.txt')
 part1(data)
