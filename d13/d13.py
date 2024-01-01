@@ -1,4 +1,6 @@
 import collections
+import operator
+import math
 
 def get_data(filename='input.txt'):
     with open(filename, 'rt', encoding='ascii') as file:
@@ -20,6 +22,84 @@ def transpose(data):
     return new_data
 
 
+
+
+def do_pops(queue, from_back=False, left_right=False, part2=False):
+
+    original_len = len(queue)
+
+    while len(queue):
+
+        if len(queue) % 2 == 0:
+            Q = list(queue)
+            L = len(Q)
+
+            top_side, bottom_side = Q[:L // 2], list(reversed(Q[L // 2:]))
+
+            if not part2:
+                if top_side == bottom_side:
+                    break
+            elif part2:
+                if my_comp(top_side, bottom_side):
+                    break
+
+        if from_back:
+            queue.popleft()  # POP FROM TOP/LEFT
+        else:
+            queue.pop()  # POP FROM BOTTOM/RIGHT
+
+    else:
+        return 0
+
+    if from_back:
+        return (1 if left_right else 100) *(original_len - len(queue)//2)
+    else:
+        return (1 if left_right else 100) *(len(queue) // 2)
+
+
+
+def my_comp(A, B):
+    N = [x for x in map(operator.xor, A, B) if x]
+
+    if len(N) == 1:
+        n = N[0]
+        cand = math.log(n, 2)
+        cand_floor = math.floor(cand)
+
+        if abs(cand_floor - cand) < 1e-10:
+            return True
+        else:
+            return False
+    return False
+
+
+def part2(data):
+
+
+    tdata = transpose(data)
+    top_down = {i: [int(row, 2) for row in entry] for i, entry in enumerate(data)}
+    left_right = {i: [int(row, 2) for row in entry] for i, entry in enumerate(tdata)}
+
+    loppusumma = 0
+
+    for i, entry in top_down.items():
+        q = collections.deque(entry)
+        loppusumma += do_pops(q, from_back=True, part2=True)
+        q = collections.deque(entry)
+        loppusumma += do_pops(q, from_back=False, part2=True)
+
+
+    for i, entry in left_right.items():
+        q = collections.deque(entry)
+        loppusumma += do_pops(q, from_back=True, left_right=True, part2=True)
+        q = collections.deque(entry)
+        loppusumma += do_pops(q, from_back=False, left_right=True, part2=True)
+
+    return loppusumma
+
+
+
+
 def part1(data):
 
     tdata = transpose(data)
@@ -27,67 +107,23 @@ def part1(data):
     top_down = {i: [hex(int(row, 2)) for row in entry] for i, entry in enumerate(data)}
     left_right = {i: [hex(int(row, 2)) for row in entry] for i, entry in enumerate(tdata)}
 
-
-    #data_entry_pops = {i: {'below': 0,
-    #                       'above': 0,
-    #                       'left': 0,
-    #                       'right': 0} for i, _ in enumerate(data)}
-
+    loppusumma = 0
 
     for i, entry in top_down.items():
-        #left_queue, right_queue = collections.deque(entry), collections.deque()
+        q = collections.deque(entry)
+        loppusumma += do_pops(q, from_back=True)
+        q = collections.deque(entry)
+        loppusumma += do_pops(q, from_back=False)
 
-        print(entry)
-        #from_left = True
-        # when we pop from left - the test is on N-1 right --- we have to repeat this until there are 2 rows left
-        # when we pop from right - the test is on N-1 left --- we have to repeat this until there are 2 rows left
+    for i, entry in left_right.items():
+        q = collections.deque(entry.copy())
+        loppusumma += do_pops(q, from_back=True, left_right=True)
+        q = collections.deque(entry.copy())
+        loppusumma += do_pops(q, from_back=False, left_right=True)
 
-        queue = collections.deque(entry)
+    return loppusumma
 
-        while len(queue):
 
-            if len(queue) % 2 == 0:
+data = get_data('input.txt')
 
-                #print(f"{queue = }")
-                Q = list(queue)
-                L = len(Q)
-
-                top_side, bottom_side = Q[:L//2], list(reversed(Q[L//2:]))
-
-                if top_side == bottom_side:
-                    print(f"FOUND BY POPPING FROM BOTTOM {top_side = }, {bottom_side = }")
-                    break
-
-            thing = queue.pop()  # POP FROM BOTTOM
-            #print(f"- {thing} popped -")
-
-            #data_entry_pops[i]['below'] += 1
-        else:
-            print("POPPING FROM BOTTOM NO RESULTS")
-
-        queue = collections.deque(entry)
-
-        while len(queue):
-
-            if len(queue) % 2 == 0:
-
-                #print(len(queue), queue)
-                Q = list(queue)
-                L = len(Q)
-
-                top_side, bottom_side = Q[:L//2], list(reversed(Q[L//2:]))
-
-                if top_side == bottom_side:
-                    print(f"FOUND BY POPPING FROM TOP {top_side = }, {bottom_side = }")
-                    break
-
-            thing = queue.popleft()  # POP FROM TOP
-            #print(f"- {thing} popped -")
-        else:
-            print("POPPING FROM TOP PRODUCED NO RESULT")
-
-        print("-"*80)
-
-data = get_data('trivials.txt')
-
-part1(data)
+print(part2(data))
